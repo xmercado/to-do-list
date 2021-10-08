@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, ScrollView, TextInput, Alert, Button } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, TextInput, Alert, CheckBox, Button } from 'react-native';
 
 export default function App() {
   const [items, setItems] = useState([
@@ -7,16 +7,24 @@ export default function App() {
     {todo: 'second item'}
   ]);
   const [userInput, setUserInput] = useState('');
+  const [isChecked, setChecked] = useState(false);
 
   const generateList = items.map((item, index) => (
-      <View key={index}>
+      <View style={styles.taskContainer} key={index}>
         <Text>{item.todo}</Text>
+        <CheckBox
+          key={index}
+          style={styles.deleteBox}
+          value={isChecked}
+          // cannot test showAlertDelete, use deleteFromList
+          onValueChange={() => deleteFromList(index)}/>
       </View>
     )
   );
 
-  const showAlert = () => {
-    console.log('SHOW ALERT');
+  const showAlertInput = () => {
+    // /!\ alert not on web /!\
+    console.log('SHOW ALERT INPUT');
     Alert.alert(
       'Invalid Task',
       'Please enter valid string',
@@ -26,22 +34,44 @@ export default function App() {
       }])
   };
 
-  const addToList = () => {
-    if (items == null) return;
-    setItems([...items, {todo: textInput}]);
-    setTextInput('');
+  const showAlertDelete = (task) => {
+    // /!\ alert not on web /!\
+    console.log('SHOW ALERT DELETE');
+    Alert.alert(
+      'Delete',
+      'Are you sure you would like to delete this task?',
+      [{
+        text: 'Yes',
+        onPress: () => deleteFromList(task),
+      },
+      {
+        text: 'No',
+        style: 'cancel'
+      }
+    ])
   };
 
-  const deleteFromList = () => {
-    // ? something with setTasks filter ?
+  const addToList = () => {
+    if (items == null) return;
+    setItems([...items, {todo: userInput}]);
+    setUserInput('');
+  };
+
+  const deleteFromList = (task) => {
+    setItems(items.filter((value, index) => index != task));
   };
 
   const verifyInput = () => {
-    // if input is string
-    // check for illegal characters too, regex?
-    if (typeof textInput === 'string') addToList();
-    else showAlert();
+    // src: https://stackoverflow.com/questions/13840143/jquery-check-if-special-characters-exists-in-string
+    if (typeof userInput === 'string' &&
+    /^[a-zA-Z0-9- ]*$/.test(userInput))
+    addToList();
+    else showAlertInput();
   };
+
+  const showItems = () => {
+    console.log(items);
+  }
 
   return (
     <View style={styles.container}>
@@ -56,13 +86,23 @@ export default function App() {
         onSubmitEditing={verifyInput}
         value = {userInput}
         placeholder='Type task here' />
-        <Button
-          title='Add to list' 
-          onPress={verifyInput}/>
-        <Button
-          title='Clear input'
-          onPress={() => setUserInput()}
-          color='red'/>
+        <View>
+          <Button
+            title='Add to list' 
+            onPress={verifyInput}/>
+        </View>
+        <View>
+          <Button
+            title='Clear input'
+            onPress={() => setUserInput()}
+            color='red'/>
+        </View>
+        <View>
+          <Button
+            title='Show items'
+            onPress={showItems}
+            color='purple'/>
+        </View>
       </View>
     </View>
   );
@@ -77,18 +117,25 @@ const styles = StyleSheet.create({
   },
   appTitle: {
     fontSize: '30px',
-    padding: 15,
+    padding: 10,
   },
   itemListContainer: {
     width: '100%',
-    padding: 15,
+    padding: 10,
   },
   inputContainer: {
     width: '100%',
-    padding: 15,
+    padding: 10,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+  },
+  taskContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 10,
   },
   itemListInput: {
     height: 25,
@@ -99,4 +146,7 @@ const styles = StyleSheet.create({
     padding: '0.5em',
     margin: 'auto',
   },
+  deleteBox: {
+    marginLeft: 10,
+  }
 });
