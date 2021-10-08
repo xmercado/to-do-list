@@ -1,14 +1,26 @@
-import React, { useState, setState } from 'react';
-import { StyleSheet, Text, View, ScrollView, TextInput, Alert, CheckBox, Button, Modal } from 'react-native';
+import React, { useState } from 'react';
+import { StyleSheet, Text, View, ScrollView, TextInput, CheckBox, Button } from 'react-native';
 
 export default function App() {
   const [items, setItems] = useState([
     {todo: 'first item'},
-    {todo: 'second item'}
+    {todo: 'second item'},
+    {todo: 'third item'},
+    {todo: 'fourth item'},
+    {todo: 'fifth item'},
+    {todo: 'sixth item'},
+    {todo: 'seventh item'},
+    {todo: 'eighth item'},
+    {todo: 'ninth item'},
+    {todo: 'tenth item'},
+    {todo: 'eleventh item'},
+    {todo: 'twelfth item'},
   ]);
   const [userInput, setUserInput] = useState('');
-  const [isChecked, setChecked] = useState(false);
-  const [popUp, setPopUp] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
+  const [alertInput, setAlertInput] = useState(false);
+  const [alertDelete, setAlertDelete] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   const generateList = items.map((item, index) => (
       <View style={styles.taskContainer} key={index}>
@@ -16,125 +28,123 @@ export default function App() {
         <CheckBox
           key={index}
           style={styles.deleteBox}
-          value={isChecked}
-          // cannot test showAlertDelete, use deleteFromList
-          onValueChange={() => deleteFromList(index)}/>
+          value={index === selectedIndex ? true : false}
+          onValueChange={() => changeDeleteState(index)}/>
       </View>
     )
   );
 
-  const customAlertInput = () => (
-    <View>
-      <Modal
-        styles={styles.modalView}
-        visible={popUp}
-        transparent={true}
-        onRequestClose={() => setPopUp(!popUp)}>
-        <View>
-          <Text>Invalid Task</Text>
-          <Text>Please enter valid string</Text>
-          <Button
-            title='OK'
-            onPress={() => setPopUp(!popUp)} />
-        </View>
-      </Modal>
+  const changeDeleteState = (index) => {
+    setSelectedIndex(index);
+    setAlertDelete(true);
+  };
+
+  const uncheckBox = () => {
+    setAlertDelete(!alertDelete);
+    setSelectedIndex(-1);
+  };
+
+  const displayDialogInput = () => (
+    <View style={styles.dialogContainer}>
+    <View style={styles.dialog}>
+      <Text>{errorMessage}</Text>
+      <Text>Please enter valid task.</Text>
+      <View style={styles.buttonActions}>
+        <Button
+          title='OK'
+          onPress={() => setAlertInput(!alertInput)}
+        />
+      </View>
     </View>
+  </View>
   );
 
-  const customAlertDelete = () => (
-    <View>
-      <Modal
-        styles={styles.modalView}
-        visible={popUp}
-        transparent={true}
-        onRequestClose={() => setPopUp(!popUp)}>
-        <Text>Delete Task</Text>
-        <Text>Are you sure you would like to delete this task?</Text>
+  const displayDialogDelete = () => (
+    <View style={styles.dialogContainer}>
+    <View style={styles.dialog}>
+      <Text>Are you sure you would like to delete this task?</Text>
+      <Text>{userInput}</Text>
+      <View style={styles.buttonActions}>
         <Button
           title='Yes'
-          onPress={() => deleteFromList(task)} />
+          onPress={() => deleteFromList()}
+          color='red' />
         <Button
           title='No'
-          onPress={() => setPopUp(!popUp)} />
-      </Modal>
+          onPress={() => uncheckBox()} />
+      </View>
     </View>
+  </View>
   );
 
-  // build view with confirm, cancel instead
-  const showAlertInput = () => {
-    // /!\ alert not on web /!\
-    console.log('SHOW ALERT INPUT');
-    Alert.alert(
-      'Invalid Task',
-      'Please enter valid string',
-      [{
-        text: 'OK',
-        style: 'cancel',
-      }])
-  };
-
-  const showAlertDelete = (task) => {
-    // /!\ alert not on web /!\
-    console.log('SHOW ALERT DELETE');
-    Alert.alert(
-      'Delete',
-      'Are you sure you would like to delete this task?',
-      [{
-        text: 'Yes',
-        onPress: () => deleteFromList(task),
-      },
-      {
-        text: 'No',
-        style: 'cancel'
-      }
-    ])
-  };
-
   const addToList = () => {
-    if (items == null) return;
     setItems([...items, {todo: userInput}]);
     setUserInput('');
   };
 
-  const deleteFromList = (task) => {
-    setItems(items.filter((value, index) => index != task));
+  const deleteFromList = () => {
+    setItems(items.filter((value, index) => index != selectedIndex));
+    setAlertDelete(!alertDelete);
+    setSelectedIndex(-1);
+  };
+
+  const checkDuplicate = () => {
+    const cleanInput = userInput.trim().toLowerCase();
+    if (items.every((item) => item.todo !== cleanInput)) {
+      return true;
+    }
+    return false;
   };
 
   const verifyInput = () => {
     // src: https://stackoverflow.com/questions/13840143/jquery-check-if-special-characters-exists-in-string
-    if (typeof userInput === 'string' &&
-        userInput.length > 0 &&
-        /^[a-zA-Z0-9- ]*$/.test(userInput))
-      addToList();
-      // showAlertInput
-    else customAlertInput();
+    if (!(userInput.length > 0) || !(/\S/.test(userInput))) {
+        setErrorMessage('Task cannot be empty.');
+        setAlertInput(!alertInput);
+    }
+    else if (!(checkDuplicate())) {
+        setErrorMessage('Task already exists.');
+        setAlertInput(!alertInput);
+    }
+    else if (!(/^[a-zA-Z0-9- ]*$/.test(userInput))) {
+        setErrorMessage('Task can only be alphanumeric.');
+        setAlertInput(!alertInput);
+    }
+    else addToList();
   };
 
   return (
     <View style={styles.container}>
       <Text style={styles.appTitle}>To Do List</Text>
-        <ScrollView style={styles.itemListContainer}>
+      <View style={styles.itemListContainer}>
+        <ScrollView>
           {generateList}
         </ScrollView>
+      </View>
       <View style={styles.inputContainer}>
         <TextInput
-        style={styles.itemListInput}
-        onChangeText={text => setUserInput(text)}
-        onSubmitEditing={verifyInput}
-        value = {userInput}
-        placeholder='Type task here' />
-        <View styles={styles.button}>
-          <Button
-            title='Add to list' 
-            onPress={verifyInput}/>
-        </View>
-        <View styles={styles.button}>
-          <Button
-            title='Clear input'
-            onPress={() => setUserInput('')}
-            color='red'/>
-        </View>
+          style={styles.itemListInput}
+          onChangeText={text => setUserInput(text)}
+          onSubmitEditing={verifyInput}
+          value = {userInput}
+          placeholder='Enter task here' />
       </View>
+      <View style={styles.buttonContainer}>
+        <Button
+          title='Add to list' 
+          onPress={verifyInput}/>
+        <View style={styles.spacing} />
+        <Button
+          title='Clear input'
+          onPress={() => setUserInput('')}
+          color='red'/>
+      </View>
+      { alertDelete
+        ? displayDialogDelete()
+        : null}
+      { alertInput
+        ? displayDialogInput()
+        : null }
     </View>
   );
 }
@@ -145,21 +155,17 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     alignItems: 'center',
     justifyContent: 'flex-start',
+    maxHeight: '100%',
   },
   appTitle: {
     fontSize: '30px',
     padding: 10,
   },
   itemListContainer: {
+    flexGrow: 1,
     width: '100%',
+    height: 300,
     padding: 10,
-  },
-  inputContainer: {
-    width: '100%',
-    padding: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
   },
   taskContainer: {
     flex: 1,
@@ -177,25 +183,45 @@ const styles = StyleSheet.create({
     padding: '0.5em',
     margin: 'auto',
   },
-  button: {
-    alignSelf: 'center',
+  inputContainer: {
+    width: '100%',
+    padding: 10,
+    alignItems: 'center',
+  },
+  buttonContainer: {
+    display: 'flex',
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 10,
+  },
+  spacing: {
+    width: 10,
   },
   deleteBox: {
-    marginLeft: 10,
+    marginHorizontal: 10,
   },
-  modalView: {
-    margin: 20,
-    backgroundColor: "white",
-    borderRadius: 20,
-    padding: 35,
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5
+
+  dialogContainer : {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dialog: {
+    border: 'solid 1px #000',
+    margin: '0 auto',
+    borderRadius: 5,
+    padding: 30,
+    backgroundColor: '#FFF',
+  },
+  buttonActions : {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-evenly',
+    marginTop: 30,
   },
 });
