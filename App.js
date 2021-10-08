@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { StyleSheet, Text, View, ScrollView, TextInput, Alert, CheckBox, Button } from 'react-native';
+import React, { useState, setState } from 'react';
+import { StyleSheet, Text, View, ScrollView, TextInput, Alert, CheckBox, Button, Modal } from 'react-native';
 
 export default function App() {
   const [items, setItems] = useState([
@@ -8,6 +8,7 @@ export default function App() {
   ]);
   const [userInput, setUserInput] = useState('');
   const [isChecked, setChecked] = useState(false);
+  const [popUp, setPopUp] = useState(false);
 
   const generateList = items.map((item, index) => (
       <View style={styles.taskContainer} key={index}>
@@ -22,6 +23,44 @@ export default function App() {
     )
   );
 
+  const customAlertInput = () => (
+    <View>
+      <Modal
+        styles={styles.modalView}
+        visible={popUp}
+        transparent={true}
+        onRequestClose={() => setPopUp(!popUp)}>
+        <View>
+          <Text>Invalid Task</Text>
+          <Text>Please enter valid string</Text>
+          <Button
+            title='OK'
+            onPress={() => setPopUp(!popUp)} />
+        </View>
+      </Modal>
+    </View>
+  );
+
+  const customAlertDelete = () => (
+    <View>
+      <Modal
+        styles={styles.modalView}
+        visible={popUp}
+        transparent={true}
+        onRequestClose={() => setPopUp(!popUp)}>
+        <Text>Delete Task</Text>
+        <Text>Are you sure you would like to delete this task?</Text>
+        <Button
+          title='Yes'
+          onPress={() => deleteFromList(task)} />
+        <Button
+          title='No'
+          onPress={() => setPopUp(!popUp)} />
+      </Modal>
+    </View>
+  );
+
+  // build view with confirm, cancel instead
   const showAlertInput = () => {
     // /!\ alert not on web /!\
     console.log('SHOW ALERT INPUT');
@@ -64,14 +103,12 @@ export default function App() {
   const verifyInput = () => {
     // src: https://stackoverflow.com/questions/13840143/jquery-check-if-special-characters-exists-in-string
     if (typeof userInput === 'string' &&
-    /^[a-zA-Z0-9- ]*$/.test(userInput))
-    addToList();
-    else showAlertInput();
+        userInput.length > 0 &&
+        /^[a-zA-Z0-9- ]*$/.test(userInput))
+      addToList();
+      // showAlertInput
+    else customAlertInput();
   };
-
-  const showItems = () => {
-    console.log(items);
-  }
 
   return (
     <View style={styles.container}>
@@ -86,22 +123,16 @@ export default function App() {
         onSubmitEditing={verifyInput}
         value = {userInput}
         placeholder='Type task here' />
-        <View>
+        <View styles={styles.button}>
           <Button
             title='Add to list' 
             onPress={verifyInput}/>
         </View>
-        <View>
+        <View styles={styles.button}>
           <Button
             title='Clear input'
-            onPress={() => setUserInput()}
+            onPress={() => setUserInput('')}
             color='red'/>
-        </View>
-        <View>
-          <Button
-            title='Show items'
-            onPress={showItems}
-            color='purple'/>
         </View>
       </View>
     </View>
@@ -146,7 +177,25 @@ const styles = StyleSheet.create({
     padding: '0.5em',
     margin: 'auto',
   },
+  button: {
+    alignSelf: 'center',
+  },
   deleteBox: {
     marginLeft: 10,
-  }
+  },
+  modalView: {
+    margin: 20,
+    backgroundColor: "white",
+    borderRadius: 20,
+    padding: 35,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5
+  },
 });
